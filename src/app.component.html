@@ -1,0 +1,481 @@
+<div class="flex flex-col h-screen w-full bg-district-black overflow-hidden relative">
+  
+  <!-- TACTICAL DYNAMIC ISLAND -->
+  <div 
+    (click)="islandExpanded.set(!islandExpanded())"
+    class="absolute top-4 left-1/2 -translate-x-1/2 bg-black border border-white/10 island-transition z-[70] flex items-center justify-center shadow-2xl overflow-hidden rounded-full cursor-pointer"
+    [class.w-64]="islandState() === 'SOS'"
+    [class.h-10]="islandState() === 'SOS'"
+    [class.border-district-maroon]="islandState() === 'SOS'"
+    [class.bg-red-950]="islandState() === 'SOS'"
+    [class.w-56]="islandState() !== 'IDLE' && islandState() !== 'SOS' && islandExpanded()"
+    [class.h-9]="islandState() !== 'IDLE' && islandState() !== 'SOS' && islandExpanded()"
+    [class.w-28]="islandState() === 'IDLE' || !islandExpanded()"
+    [class.h-7]="islandState() === 'IDLE' || !islandExpanded()"
+  >
+    <!-- Island Content -->
+    @switch (islandState()) {
+      @case ('SOS') {
+        <div class="flex items-center justify-between w-full px-4 animate-pulse">
+          <span class="material-symbols-outlined text-sm text-red-500 fill">shield_alert</span>
+          <span class="text-red-500 font-black text-[10px] uppercase tracking-widest">ALERTA SOS</span>
+          <div class="w-2 h-2 rounded-full bg-red-500"></div>
+        </div>
+      }
+      @case ('EVENT') {
+        <div class="flex items-center justify-between w-full px-4">
+          <span class="material-symbols-outlined text-sm text-district-teal animate-bounce">music_note</span>
+          <span class="text-white font-black text-[10px] uppercase truncate max-w-[120px]">{{ selectedEvent()?.title }}</span>
+          <div class="w-2 h-2 bg-district-teal rounded-full animate-ping"></div>
+        </div>
+      }
+      @case ('NAV') {
+        <div class="flex items-center justify-between w-full px-4">
+          <span class="material-symbols-outlined text-sm text-district-orange">navigation</span>
+          <span class="text-white font-black text-[10px] uppercase">Rastreo Activo</span>
+          <span class="material-symbols-outlined text-sm text-district-orange animate-pulse">radio</span>
+        </div>
+      }
+      @case ('SECURE') {
+        <div class="flex items-center justify-between w-full px-4">
+          <span class="material-symbols-outlined text-sm text-green-500">lock</span>
+          <span class="text-green-500 font-black text-[10px] uppercase tracking-widest">VERIFICADO</span>
+          <span class="material-symbols-outlined text-sm text-green-500">check_circle</span>
+        </div>
+      }
+      @default {
+        <div class="w-1.5 h-1.5 rounded-full bg-white/10"></div>
+      }
+    }
+  </div>
+
+  <!-- STATUS BAR AREA -->
+  <div class="h-12 w-full flex items-center justify-between px-8 pt-4 z-50 pointer-events-none">
+    <span class="text-xs font-black text-white tracking-widest">9:41</span>
+    <div class="flex gap-2 items-center">
+      <span class="material-symbols-outlined text-sm text-white fill">navigation</span>
+      <div class="flex gap-0.5">
+         <div class="w-4 h-2 bg-white/20 rounded-sm"></div>
+         <div class="w-4 h-2 bg-white rounded-sm"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SOS TRIGGER BUTTON -->
+  <div class="absolute top-16 right-6 z-[60]">
+     <button 
+       (mousedown)="startSOS()"
+       (mouseup)="stopSOS()"
+       (mouseleave)="stopSOS()"
+       (touchstart)="startSOS()"
+       (touchend)="stopSOS()"
+       class="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 relative overflow-hidden"
+       [class.bg-district-maroon]="isSOS()"
+       [class.scale-125]="isSOS()"
+       [class.bg-white/5]="!isSOS()"
+       [class.backdrop-blur-xl]="!isSOS()"
+     >
+       <span class="material-symbols-outlined text-xl" [class.text-white]="isSOS()" [class.text-red-600]="!isSOS()">shield_alert</span>
+       
+       <!-- Progress Circle -->
+       @if (isSOS()) {
+         <svg class="absolute inset-0 -rotate-90 pointer-events-none" viewBox="0 0 48 48">
+           <circle cx="24" cy="24" r="22" fill="transparent" stroke="white" stroke-width="2" stroke-dasharray="138" [style.stroke-dashoffset]="138 - (sosProgress() * 1.38)" />
+         </svg>
+       }
+     </button>
+  </div>
+
+  <!-- MAIN VIEWPORT -->
+  <div class="flex-1 overflow-y-auto px-6 pt-4 no-scrollbar pb-32">
+    
+    <!-- DETAIL OVERLAY (Event Detail) -->
+    @if (selectedEvent(); as event) {
+      <div class="animate-slide-up space-y-8">
+        <button (click)="closeDetail()" class="flex items-center gap-2 group mb-4">
+          <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-district-maroon transition-colors">
+            <span class="material-symbols-outlined text-white">close</span>
+          </div>
+          <span class="text-district-tan font-black text-[10px] tracking-widest uppercase">Cerrar Detalle</span>
+        </button>
+
+        <div class="relative rounded-district overflow-hidden aspect-[4/5] shadow-2xl border border-white/5">
+          <img [src]="event.image" class="w-full h-full object-cover" [alt]="event.title">
+          <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
+          <div class="absolute bottom-10 left-10 right-10">
+             <div class="inline-block px-3 py-1 rounded-full bg-black/40 border border-white/10 backdrop-blur-md mb-4">
+                <span class="text-[9px] font-black uppercase tracking-tighter text-white">{{ event.track }}</span>
+             </div>
+             <h1 class="text-5xl font-black text-white leading-none tracking-tighter uppercase mb-2">{{ event.title }}</h1>
+             <p class="text-white/60 font-bold text-lg uppercase">{{ event.location }}</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 h-16">
+          <div class="bg-district-card rounded-2xl flex flex-col justify-center items-center border border-white/5">
+            <p class="text-zinc-600 text-[8px] font-black uppercase">Código</p>
+            <p class="text-white font-black text-xs uppercase">{{ event.dress }}</p>
+          </div>
+          <div class="bg-district-card rounded-2xl flex flex-col justify-center items-center border border-white/5">
+            <p class="text-zinc-600 text-[8px] font-black uppercase">Acceso</p>
+            <p class="text-white font-black text-xs">DOG TAG</p>
+          </div>
+        </div>
+
+        <button class="w-full bg-district-maroon py-5 rounded-district font-black text-white text-xs tracking-[0.2em] shadow-xl shadow-district-maroon/20">
+          AÑADIR A MI PLAN
+        </button>
+      </div>
+    } @else {
+      <!-- TAB NAVIGATION RENDERING -->
+      @switch (activeTab()) {
+        
+        <!-- HOME TAB -->
+        @case ('home') {
+          <div class="animate-fade-in space-y-6">
+            <div class="flex justify-between items-end">
+              <div>
+                <p class="text-district-tan text-[10px] font-bold tracking-[0.2em] uppercase mb-1">Puerto Vallarta</p>
+                <h1 class="text-4xl font-black text-white leading-none tracking-tighter">DISTRICT<span class="text-district-maroon">.</span></h1>
+              </div>
+              <div class="flex flex-col items-end">
+                <span class="text-white font-black text-lg">28°C</span>
+                <span class="text-district-orange text-[10px] font-bold">SOLEADO</span>
+              </div>
+            </div>
+
+            <div (click)="onEventClick(liveEvent)" class="relative h-[420px] rounded-district overflow-hidden shadow-2xl border border-white/5 cursor-pointer group">
+              <img [src]="liveEvent.image" class="absolute inset-0 w-full h-full object-cover grayscale-[20%] group-hover:scale-105 transition-transform duration-1000">
+              <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
+              
+              <div class="absolute top-6 left-6 flex gap-2">
+                <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/40 border border-white/10 backdrop-blur-md">
+                   <div class="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></div>
+                   <span class="text-[9px] font-black uppercase text-white">En Vivo</span>
+                </div>
+              </div>
+
+              <div class="absolute bottom-8 left-8 right-8">
+                <h2 class="text-4xl font-black text-white uppercase tracking-tighter leading-[0.9] mb-2">{{ liveEvent.title }}</h2>
+                <div class="flex items-center gap-2 text-district-tan font-bold text-sm mb-6">
+                  <span class="material-symbols-outlined text-sm">location_on</span>
+                  <span>{{ liveEvent.location }}</span>
+                </div>
+                <div class="flex gap-3">
+                  <button class="flex-1 bg-district-maroon py-4 rounded-2xl font-black text-white text-xs tracking-widest active:scale-95 transition-transform">CHECK-IN</button>
+                  <button class="w-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/10">
+                    <span class="material-symbols-outlined text-white">share</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              @for (stat of stats; track stat.label) {
+                <div class="bg-district-card p-5 rounded-[30px] border border-white/5">
+                  <p class="text-zinc-500 text-[9px] font-black uppercase mb-1">{{ stat.label }}</p>
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-lg" [style.color]="stat.color">bolt</span>
+                    <span class="text-white font-black text-xl tracking-tight">{{ stat.value }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- EXPLORE TAB -->
+        @case ('explore') {
+          <div class="animate-slide-up space-y-8">
+            <h2 class="text-2xl font-black text-white uppercase tracking-tighter">Explorar</h2>
+            
+            <div class="space-y-4">
+              <h3 class="text-district-tan text-[10px] font-black uppercase tracking-widest">Gente Cerca</h3>
+              <div class="grid grid-cols-3 gap-2">
+                @for (user of usersNearby(); track user.id) {
+                  <div class="aspect-square relative rounded-2xl overflow-hidden bg-zinc-900 border border-white/5 active:scale-95 transition-transform">
+                    <img [src]="user.img" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                    <div class="absolute bottom-2 left-2 right-2">
+                      <div class="flex items-center gap-1">
+                        @if (user.online) { <div class="w-1.5 h-1.5 bg-green-500 rounded-full"></div> }
+                        <span class="text-white font-black text-[10px] truncate uppercase">{{ user.name }}</span>
+                      </div>
+                      <p class="text-white/60 text-[8px] font-bold">{{ user.dist }}</p>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <h3 class="text-district-tan text-[10px] font-black uppercase tracking-widest">Cosas del Distrito</h3>
+              <div class="space-y-4">
+                @for (item of moments(); track item.id) {
+                  <div class="bg-district-card rounded-3xl overflow-hidden border border-white/5 flex h-28">
+                    <img [src]="item.img" class="w-28 h-full object-cover">
+                    <div class="flex-1 p-4 flex flex-col justify-center">
+                      <div class="inline-block px-2 py-0.5 rounded-full bg-white/5 text-[8px] font-black text-district-orange uppercase border border-white/5 w-fit mb-1">{{ item.type }}</div>
+                      <h4 class="text-white font-black text-sm uppercase">{{ item.title }}</h4>
+                      <p class="text-zinc-500 text-[10px] font-bold leading-snug mt-1">{{ item.content }}</p>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- SCHEDULE TAB (Enhanced with Search and Filters) -->
+        @case ('schedule') {
+          <div class="animate-fade-in space-y-6">
+            <!-- Header Section -->
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <h2 class="text-3xl font-black text-white uppercase tracking-tighter">Itinerario</h2>
+                <div class="bg-district-maroon px-3 py-1 rounded-lg text-white font-black text-[10px] tracking-widest uppercase">Enero 2026</div>
+              </div>
+
+              <!-- Search Bar -->
+              <div class="relative group">
+                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-district-tan transition-colors">search</span>
+                <input 
+                  type="text" 
+                  [value]="scheduleSearchQuery()"
+                  (input)="onSearchInput($event)"
+                  placeholder="Buscar evento o venue..." 
+                  class="w-full bg-district-card/50 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-district-tan focus:ring-1 focus:ring-district-tan transition-all placeholder:text-zinc-600">
+                @if(scheduleSearchQuery()) {
+                   <button (click)="scheduleSearchQuery.set('')" class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white">
+                      <span class="material-symbols-outlined text-sm">close</span>
+                   </button>
+                }
+              </div>
+
+              <!-- Date Filter Strip -->
+              <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                @for (date of dateOptions(); track date) {
+                   <button 
+                     (click)="setDateFilter(date)"
+                     class="flex-shrink-0 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all"
+                     [class.bg-district-tan]="selectedDateFilter() === date"
+                     [class.text-black]="selectedDateFilter() === date"
+                     [class.border-district-tan]="selectedDateFilter() === date"
+                     [class.bg-transparent]="selectedDateFilter() !== date"
+                     [class.text-zinc-500]="selectedDateFilter() !== date"
+                     [class.border-white/10]="selectedDateFilter() !== date"
+                   >
+                     {{ date === 'ALL' ? 'Todos' : 'Día ' + date }}
+                   </button>
+                }
+              </div>
+
+              <!-- Track Filter Pills -->
+              <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                @for (track of trackOptions; track track) {
+                   <button 
+                     (click)="setTrackFilter(track)"
+                     class="flex-shrink-0 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-tighter border transition-all"
+                     [class.bg-district-maroon]="selectedTrackFilter() === track"
+                     [class.text-white]="selectedTrackFilter() === track"
+                     [class.border-district-maroon]="selectedTrackFilter() === track"
+                     [class.bg-white/5]="selectedTrackFilter() !== track"
+                     [class.text-zinc-500]="selectedTrackFilter() !== track"
+                     [class.border-white/5]="selectedTrackFilter() !== track"
+                   >
+                     {{ track }}
+                   </button>
+                }
+              </div>
+            </div>
+
+            <!-- Card List -->
+            <div class="space-y-4">
+              @if (filteredSchedule().length > 0) {
+                @for (evt of filteredSchedule(); track evt.id) {
+                  <div 
+                    (click)="onEventClick(evt)" 
+                    class="relative group cursor-pointer active:scale-[0.98] transition-all"
+                  >
+                    <!-- Tactical Event Card -->
+                    <div class="relative bg-district-card rounded-[32px] overflow-hidden border border-white/5 shadow-xl h-44">
+                       <!-- Optional Background Image with blur -->
+                       @if (evt.image) {
+                         <img [src]="evt.image" class="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-40 transition-opacity">
+                         <div class="absolute inset-0 bg-gradient-to-r from-district-black via-district-black/60 to-transparent"></div>
+                       }
+
+                       <div class="relative h-full flex p-6">
+                         <!-- Time Side Bar -->
+                         <div class="w-16 flex flex-col justify-center items-center border-r border-white/10 pr-6 mr-6">
+                            <span class="text-[9px] font-black text-district-tan uppercase mb-1">{{ formatDay(evt.start) }} ENE</span>
+                            <span class="text-xl font-black text-white leading-none">{{ formatTime(evt.start) }}</span>
+                         </div>
+
+                         <!-- Content Area -->
+                         <div class="flex-1 flex flex-col justify-center">
+                            <div class="flex items-center gap-2 mb-1">
+                               <div class="w-1.5 h-1.5 rounded-full" [style.background-color]="evt.color"></div>
+                               <span class="text-[8px] font-black text-zinc-400 uppercase tracking-widest">{{ evt.track }}</span>
+                            </div>
+                            <h3 class="text-lg font-black text-white uppercase leading-tight tracking-tight mb-1 group-hover:text-district-tan transition-colors">{{ evt.title }}</h3>
+                            <div class="flex items-center gap-1.5 text-zinc-500">
+                               <span class="material-symbols-outlined text-[14px]">location_on</span>
+                               <span class="text-[10px] font-bold uppercase tracking-wide">{{ evt.location }}</span>
+                            </div>
+                         </div>
+                         
+                         <!-- Indicator / CTA -->
+                         <div class="flex items-center pl-2">
+                            <span class="material-symbols-outlined text-zinc-700 group-hover:text-district-tan transition-colors">chevron_right</span>
+                         </div>
+                       </div>
+                    </div>
+                  </div>
+                }
+              } @else {
+                <!-- Empty Search State -->
+                <div class="flex flex-col items-center justify-center py-20 text-center opacity-30">
+                   <span class="material-symbols-outlined text-6xl mb-4">event_busy</span>
+                   <p class="font-black uppercase text-sm tracking-widest">No se encontraron eventos</p>
+                   <p class="text-[10px] mt-1 font-bold">Prueba con otros filtros o busca algo distinto</p>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- WALLET TAB -->
+        @case ('wallet') {
+          <div class="flex flex-col items-center justify-center min-h-[500px] animate-pop-in px-6">
+            <div class="w-full bg-district-card rounded-[48px] p-10 border border-white/5 shadow-2xl relative overflow-hidden flex flex-col items-center">
+               <!-- Hologram Glare -->
+               <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-tr from-transparent via-white/5 to-transparent skew-x-12 animate-glare"></div>
+
+               <p class="text-district-tan text-[9px] font-black tracking-widest uppercase mb-10">Pase de Distrito Verificado</p>
+               
+               <div class="w-52 h-52 bg-white p-3 rounded-[40px] shadow-inner mb-10 relative group">
+                  <div class="w-full h-full grid grid-cols-4 gap-1 p-2">
+                     @for (i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]; track i) {
+                       <div class="rounded-lg" [class.bg-black]="i % 3 === 0" [class.bg-zinc-200]="i % 3 !== 0"></div>
+                     }
+                  </div>
+                  <div class="absolute -bottom-4 -right-4 w-12 h-12 bg-district-orange rounded-2xl flex items-center justify-center shadow-lg border-4 border-district-card">
+                     <span class="material-symbols-outlined text-black fill">verified_user</span>
+                  </div>
+               </div>
+
+               <h3 class="text-white font-black text-2xl tracking-tighter uppercase mb-1">RAFAEL MÉNDEZ</h3>
+               <p class="text-district-maroon font-black text-[10px] tracking-widest uppercase mb-10 flex items-center gap-2">
+                 <span class="material-symbols-outlined text-xs">military_tech</span> SOCIO GOLD BEEFDIP
+               </p>
+
+               <div class="w-full flex items-center justify-between px-2 pt-6 border-t border-white/5 text-[9px] font-black text-zinc-500 uppercase tracking-widest">
+                  <span>EXP: 02 FEB</span>
+                  <span>v2.0.4.MX</span>
+               </div>
+            </div>
+          </div>
+        }
+
+        <!-- MAP TAB -->
+        @case ('map') {
+          <div class="h-full flex flex-col animate-fade-in min-h-[500px]">
+            <div class="flex justify-between items-center mb-6">
+               <h2 class="text-2xl font-black text-white uppercase tracking-tighter">Heatmap</h2>
+               <div class="px-3 py-1 bg-district-orange rounded-full text-black font-black text-[8px]">VIVO: ALTO</div>
+            </div>
+            <div class="flex-1 bg-district-card rounded-district border border-white/5 relative overflow-hidden shadow-2xl">
+               <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] scale-150"></div>
+               <div class="absolute inset-0 bg-gradient-to-br from-district-card via-black to-district-card"></div>
+               
+               <div class="absolute top-1/2 left-1/3 w-32 h-32 bg-district-maroon/30 rounded-full blur-3xl animate-pulse"></div>
+               <div class="absolute top-1/4 left-1/2 w-24 h-24 bg-district-orange/20 rounded-full blur-2xl animate-pulse" style="animation-delay: 1s;"></div>
+
+               <div class="absolute top-1/2 left-1/3 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+                  <div class="w-10 h-10 bg-district-maroon rounded-full border-4 border-black shadow-2xl flex items-center justify-center">
+                     <span class="material-symbols-outlined text-white text-sm fill">favorite</span>
+                  </div>
+                  <span class="text-[9px] font-black text-white mt-2 bg-black/80 px-3 py-1 rounded-full uppercase">Blue Chairs</span>
+               </div>
+            </div>
+          </div>
+        }
+      }
+    }
+  </div>
+
+  <!-- FLOATING NAVIGATION BAR (Refined) -->
+  <div class="absolute bottom-8 left-6 right-6 h-20 bg-district-card/80 backdrop-blur-2xl border border-white/5 rounded-[32px] flex items-center justify-around px-2 z-[50] shadow-2xl">
+    
+    <button 
+      (click)="setTab('home')" 
+      class="flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300"
+      [class.animate-spring]="activeTab() === 'home'"
+      [class.bg-white]="activeTab() === 'home'"
+      [class.shadow-lg]="activeTab() === 'home'"
+      [class.shadow-white/10]="activeTab() === 'home'"
+    >
+      <span class="material-symbols-outlined text-2xl" [class.text-district-maroon]="activeTab() === 'home'" [class.text-zinc-600]="activeTab() !== 'home'">home</span>
+    </button>
+
+    <button 
+      (click)="setTab('schedule')" 
+      class="flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300"
+      [class.animate-spring]="activeTab() === 'schedule'"
+      [class.bg-white]="activeTab() === 'schedule'"
+      [class.shadow-lg]="activeTab() === 'schedule'"
+      [class.shadow-white/10]="activeTab() === 'schedule'"
+    >
+      <span class="material-symbols-outlined text-2xl" [class.text-district-maroon]="activeTab() === 'schedule'" [class.text-zinc-600]="activeTab() !== 'schedule'">calendar_today</span>
+    </button>
+    
+    <!-- Central Primary Button (Map) -->
+    <div class="relative">
+      <button 
+        (click)="setTab('map')" 
+        class="w-16 h-16 bg-district-maroon rounded-[24px] flex items-center justify-center -translate-y-6 shadow-[0_15px_30px_rgba(139,21,56,0.6)] border-[5px] border-district-black active:scale-95 active:-translate-y-5 transition-all group"
+      >
+        <span class="material-symbols-outlined text-white text-3xl group-hover:scale-110 transition-transform">map</span>
+      </button>
+    </div>
+
+    <button 
+      (click)="setTab('explore')" 
+      class="flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300"
+      [class.animate-spring]="activeTab() === 'explore'"
+      [class.bg-white]="activeTab() === 'explore'"
+      [class.shadow-lg]="activeTab() === 'explore'"
+      [class.shadow-white/10]="activeTab() === 'explore'"
+    >
+      <span class="material-symbols-outlined text-2xl" [class.text-district-maroon]="activeTab() === 'explore'" [class.text-zinc-600]="activeTab() !== 'explore'">explore</span>
+    </button>
+
+    <button 
+      (click)="setTab('wallet')" 
+      class="flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300"
+      [class.animate-spring]="activeTab() === 'wallet'"
+      [class.bg-white]="activeTab() === 'wallet'"
+      [class.shadow-lg]="activeTab() === 'wallet'"
+      [class.shadow-white/10]="activeTab() === 'wallet'"
+    >
+      <span class="material-symbols-outlined text-2xl" [class.text-district-maroon]="activeTab() === 'wallet'" [class.text-zinc-600]="activeTab() !== 'wallet'">account_balance_wallet</span>
+    </button>
+  </div>
+
+  <!-- EMERGENCY SOS OVERLAY -->
+  @if (sosProgress() > 15) {
+    <div class="absolute inset-0 bg-red-950/90 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-10 text-center animate-fade-in">
+       <div class="w-40 h-40 rounded-full border-[10px] border-white/10 flex items-center justify-center relative mb-10 overflow-hidden">
+          <!-- Fill Progress Overlay -->
+          <div class="absolute inset-0 bg-white origin-bottom transition-all duration-75" [style.height.%]="sosProgress()"></div>
+          <span class="material-symbols-outlined text-6xl text-red-950 z-10" [class.text-white]="sosProgress() < 50">shield_alert</span>
+       </div>
+       <h2 class="text-4xl font-black text-white uppercase tracking-tighter mb-4">Llamando al 911 PV</h2>
+       <p class="text-white/60 font-bold uppercase tracking-widest text-xs">Mantén presionado para confirmar</p>
+       <div class="mt-12 text-white font-mono text-xs opacity-50">
+         Lat: 20.6015 | Lng: -105.2345
+       </div>
+    </div>
+  }
+</div>
